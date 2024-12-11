@@ -1,11 +1,179 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import Layout from '../layouts/Layout.astro'
 ---
 
 <Layout>
-	<Welcome />
+  <main>
+    <!-- Settings -->
+    <section id="mood-board-settings">
+      <div class="grid-column upload-images">
+        <p class="text-title">Choose images:</p>
+        <input type="file" id="imageUpload" accept="image/*" multiple />
+      </div>
+      <div class="grid-column column-number">
+        <p>Number of columns:</p>
+        <input type="number" id="columnNumber" value="8" />
+      </div>
+      <div class="grid-column button-layout">
+        <p>Apply the settings:</p>
+        <button id="layoutButton">Apply</button>
+      </div>
+      <div class="grid-column button-clear">
+        <p>Clear the moodboard:</p>
+        <button id="clearButton">Clear</button>
+      </div>
+      <div class="grid-column button-save">
+        <p>Save as JPG:</p>
+        <button id="saveButton">Save as JPG</button>
+      </div>
+    </section>
+    <!-- Moodboard -->
+    <section id="mood-board-section">
+      <div class="main row">
+        <div class="mood-board-container">
+          <div class="item-size"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script is:inline defer>
+    //
+    // Upload Images
+    const uploadInput = document.getElementById('imageUpload')
+    uploadInput.addEventListener('change', (event) => {
+      const uploadedImages = []
+      const files = event.target.files
+      const imagePromises = []
+
+      for (const file of files) {
+        const url = URL.createObjectURL(file)
+        uploadedImages.push(url)
+
+        const item = document.createElement('div')
+        item.classList.add('item')
+
+        const img = document.createElement('img')
+        img.src = url
+        img.alt = file.name
+
+        const imageLoadPromise = new Promise((resolve) => {
+          img.onload = () => {
+            resolve(img)
+          }
+        })
+
+        imagePromises.push(imageLoadPromise)
+
+        imageLoadPromise.then(() => {
+          item.appendChild(img)
+          imageDisplay.appendChild(item)
+        })
+      }
+
+      Promise.all(imagePromises).then(() => {
+        layoutMasonry()
+      })
+    })
+
+    // Change Column Number
+    const columnInput = document.getElementById('columnNumber')
+    columnInput.addEventListener('change', (event) => {
+      columnNumber = event.target.value
+      layoutMasonry()
+    })
+
+    // Handle Layout
+    const imageDisplay = document.querySelector('.mood-board-container')
+    function layoutMasonry() {
+      if (imageDisplay) {
+        console.log(`LAYOUT`)
+        columnNum = columnInput.value
+        const galleryWidth = imageDisplay.clientWidth
+        const columnGutter = parseFloat(
+          getComputedStyle(document.documentElement).fontSize,
+        )
+        const totalGutterWidth = (columnNum - 1) * columnGutter
+        const columnWidth = (galleryWidth - totalGutterWidth) / columnNum
+        const columnPercent = (columnWidth / galleryWidth) * 100
+
+        document.documentElement.style.setProperty(
+          '--column-width',
+          `${columnPercent}%`,
+        )
+        document.documentElement.style.setProperty(
+          '--column-gutter',
+          `${columnGutter}px`,
+        )
+
+        const msnry = new Masonry(imageDisplay, {
+          itemSelector: '.item',
+          columnWidth: '.item-size',
+          gutter: columnGutter,
+          percentPosition: true,
+        })
+      }
+    }
+
+    // Apply Layout
+    const layoutButton = document.getElementById('layoutButton')
+    layoutButton.addEventListener('click', function () {
+      layoutMasonry()
+    })
+
+    // Clear Layout
+    const clearButton = document.getElementById('clearButton')
+    clearButton.addEventListener('click', function () {
+      const toBeDeleted = imageDisplay.querySelectorAll('.item')
+      toBeDeleted.forEach((item) => {
+        item.remove()
+      })
+    })
+
+    // Save Moodboard as JPG
+    saveButton.addEventListener('click', function () {
+      // Check if html2canvas is loaded
+      if (html2canvas) {
+        html2canvas(document.querySelector('#mood-board-section'), {
+          useCORS: true, // Enable cross-origin image support
+        })
+          .then(function (canvas) {
+            const link = document.createElement('a')
+            link.href = canvas.toDataURL('image/jpeg') // JPG format
+            link.download = 'moodboard.jpg'
+            link.click()
+          })
+          .catch((error) => {
+            console.error('Error capturing the screenshot: ', error)
+          })
+      } else {
+        console.error('html2canvas is not loaded properly!')
+      }
+    })
+
+    // Relayout on Resize
+    window.addEventListener('resize', function () {
+      layoutMasonry()
+    })
+  </script>
 </Layout>
+
+<style is:global>
+  #mood-board-settings {
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2rem;
+    border-bottom: solid 1px;
+  }
+
+  #mood-board-settings .grid-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  #mood-board-settings .text-title {
+    text-transform: capitalize;
+  }
+</style>
