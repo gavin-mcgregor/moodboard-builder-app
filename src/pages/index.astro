@@ -185,6 +185,7 @@ import Layout from '../layouts/Layout.astro'
 
   #mood-board-settings .settings-grid {
     display: flex;
+    flex-wrap: wrap;
     flex-direction: row;
     gap: 2rem;
   }
@@ -201,5 +202,14 @@ import Layout from '../layouts/Layout.astro'
 
   #mood-board-settings .text-title {
     text-transform: capitalize;
+  }
+
+  @media (max-width: 640px) {
+    #mood-board-settings .grid-column {
+      width: 100%;
+    }
+    #mood-board-settings .grid-spacer {
+      display: none;
+    }
   }
 </style>
